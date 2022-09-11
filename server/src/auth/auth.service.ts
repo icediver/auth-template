@@ -5,6 +5,7 @@ import {
 	UnauthorizedException
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { genSalt, hash } from 'bcryptjs';
 import { Repository } from 'typeorm';
 import { UserEntity } from '../user/user.entity';
 import { AuthDto } from './dto/auth.dto';
@@ -18,7 +19,6 @@ export class AuthService {
 
 	async login(dto: AuthDto) {
 		const user = await this.validateUser(dto);
-		console.log(user);
 		return {
 			user: this.returnUserFields(user),
 			accessToken: 'secret token'
@@ -34,13 +34,14 @@ export class AuthService {
 			throw new BadRequestException(
 				'User with this email is already in the system'
 			);
-
+		const salt = await genSalt(10);
 		const newUser = await this.userRepository.create({
 			email: dto.email,
-			password: dto.password,
+			password: await hash(dto.password, salt),
 			name: dto.email,
 			avatarPath: '/uploads/avatars/batman.jpg'
 		});
+
 		const user = await this.userRepository.save(newUser);
 
 		return {
