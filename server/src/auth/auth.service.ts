@@ -5,7 +5,7 @@ import {
 	UnauthorizedException
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { genSalt, hash } from 'bcryptjs';
+import { compare, genSalt, hash } from 'bcryptjs';
 import { Repository } from 'typeorm';
 import { UserEntity } from '../user/user.entity';
 import { AuthDto } from './dto/auth.dto';
@@ -50,7 +50,7 @@ export class AuthService {
 		};
 	}
 
-	async validateUser(dto: AuthDto) {
+	async validateUser(dto: AuthDto): Promise<UserEntity> {
 		const user = await this.userRepository.findOne({
 			where: {
 				email: dto.email
@@ -58,11 +58,10 @@ export class AuthService {
 			select: ['id', 'email', 'password', 'avatarPath', 'name']
 		});
 
-		if (!user) throw new NotFoundException('Пользователь не найден!');
-		const isValidPassword = (await dto.password) === user.password;
+		if (!user) throw new NotFoundException('User not found!');
+		const isValidPassword = await compare(dto.password, user.password);
 
-		if (!isValidPassword)
-			throw new UnauthorizedException('Не правильный пароль!');
+		if (!isValidPassword) throw new UnauthorizedException('Invalid passport!');
 
 		return user;
 	}
