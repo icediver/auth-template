@@ -1,0 +1,36 @@
+.wrapper {
+	@apply relative inline-flex;
+	
+	.form {
+		@apply p-4 absolute bg-white right-2 w-60 z-20 rounded-l text-center;
+		top: calc(100% + 1.4rem);
+		background-color: #dbe0f0;
+		
+		.register {
+			@apply text-gray-400 bg-transparent text-xs font-light mt-2 text-center w-full;
+			
+		}
+		
+		.loginButton {
+			@apply mt-5 mb-1 text-center;
+		}
+		
+		.error {
+			@apply text-purple-400 text-xs text-center;
+		}
+		
+		
+	}
+	
+	.logout {
+		@apply ml-9 bg-blue-900 text-base text-gray-400 p-0;
+		&:hover {
+			@apply text-red-300;
+		}
+	}
+	
+	.button {
+		@apply bg-blue-900 text-3xl text-gray-400 p-0 mb-0.5;
+	}
+	
+}

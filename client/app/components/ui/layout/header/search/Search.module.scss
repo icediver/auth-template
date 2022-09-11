@@ -1,0 +1,21 @@
+@import "../../../../../assets/styles/mixins";
+
+.search_top {
+	@apply relative;
+	max-width: 600px;
+	
+	
+	.result {
+		@apply flex flex-wrap absolute z-20 p-2 mt-2 w-full rounded-lg;
+		background-color: #ebecf4;
+		width: 600px;
+		left: -144px;
+		@include shadow();
+		
+		> a {
+			@apply mr-4 last:mr-0;
+			width: 23%;
+		}
+	}
+}
+

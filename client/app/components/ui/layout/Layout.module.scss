@@ -1,0 +1,21 @@
+@import "../../../assets/styles/mixins";
+
+.wrapper {
+	@apply flex-col ;
+	//	grid-template-columns: 1fr 18fr;
+	
+	
+}
+
+.content {
+	@apply bg-[#ebeffd] px-32;
+	
+	
+	z-index: 1;
+	min-height: calc(100vh - 4rem);
+	
+}
+
+.main {
+	@apply pt-4 pb-4 ;
+}

@@ -1,0 +1,35 @@
+@import '../../../assets/styles/mixins';
+
+.input {
+	@apply relative block mb-5;
+	
+	
+	> input {
+		@apply pb-1 pl-5 w-full text-xs rounded-sm overflow-hidden block bg-gray-50 text-gray-900;
+		@include shadow();
+		
+		&::placeholder {
+			@apply text-gray-400  text-opacity-50 font-light;
+		}
+		
+		&:focus-visible {
+			outline: none;
+		}
+	}
+	
+	&.withIcon {
+		@apply mb-0;
+		> input {
+			@apply pl-10;
+		}
+	}
+	
+	> .icon {
+		@apply absolute top-1 left-2 text-gray-400 text-lg;
+	}
+}
+
+.error {
+	@apply absolute -bottom-4 left-0 w-full text-primary text-purple-400;
+	font-size: 0.75rem;
+}

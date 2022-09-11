@@ -1,0 +1,10 @@
+.header {
+	@apply flex-center-between p-2 border-0 border-b-2 border-solid border-b-white bg-blue-900 px-32;
+	min-height: 80px;
+}
+
+.logo {
+	@apply block text-2xl text-blue-500 font-bold;
+	line-height: 0.8;
+	
+}
