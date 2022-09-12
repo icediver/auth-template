@@ -1,77 +1,111 @@
 import {
-	BadRequestException,
-	Injectable,
-	NotFoundException,
-	UnauthorizedException
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException
 } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { compare, genSalt, hash } from 'bcryptjs';
 import { Repository } from 'typeorm';
 import { UserEntity } from '../user/user.entity';
 import { AuthDto } from './dto/auth.dto';
+import { RefreshTokenDto } from './dto/refreshToken.dto';
 
 @Injectable()
 export class AuthService {
-	constructor(
-		@InjectRepository(UserEntity)
-		private readonly userRepository: Repository<UserEntity>
-	) {}
+  constructor(
+    @InjectRepository(UserEntity)
+    private readonly userRepository: Repository<UserEntity>,
+    private readonly jwtService: JwtService
+  ) {}
 
-	async login(dto: AuthDto) {
-		const user = await this.validateUser(dto);
-		return {
-			user: this.returnUserFields(user),
-			accessToken: 'secret token'
-		};
-	}
+  async login(dto: AuthDto) {
+    const user = await this.validateUser(dto);
+    const tokens = await this.issueTokenPair(user.id);
 
-	async register(dto: AuthDto) {
-		const oldUser = await this.userRepository.findOne({
-			where: { email: dto.email }
-		});
+    return {
+      user: this.returnUserFields(user),
+      ...tokens
+    };
+  }
 
-		if (oldUser)
-			throw new BadRequestException(
-				'User with this email is already in the system'
-			);
-		const salt = await genSalt(10);
-		const newUser = await this.userRepository.create({
-			email: dto.email,
-			password: await hash(dto.password, salt),
-			name: dto.email,
-			avatarPath: '/uploads/avatars/batman.jpg'
-		});
+  async getNewTokens({ refreshToken }: RefreshTokenDto) {
+    if (!refreshToken) throw new UnauthorizedException('Please sign in!');
 
-		const user = await this.userRepository.save(newUser);
+    const result = await this.jwtService.verifyAsync(refreshToken);
+    if (!result) throw new UnauthorizedException('Invalid token or expired!');
+    const user = await this.userRepository.findOne({
+      where: { id: result.id }
+    });
+    const tokens = await this.issueTokenPair(user.id);
+    return {
+      user: this.returnUserFields(user),
+      ...tokens
+    };
+  }
 
-		return {
-			user: this.returnUserFields(user),
-			accessToken: 'secret token'
-		};
-	}
+  async register(dto: AuthDto) {
+    const oldUser = await this.userRepository.findOne({
+      where: { email: dto.email }
+    });
 
-	async validateUser(dto: AuthDto): Promise<UserEntity> {
-		const user = await this.userRepository.findOne({
-			where: {
-				email: dto.email
-			},
-			select: ['id', 'email', 'password', 'avatarPath', 'name']
-		});
+    if (oldUser)
+      throw new BadRequestException(
+        'User with this email is already in the system'
+      );
+    const salt = await genSalt(10);
+    const newUser = await this.userRepository.create({
+      email: dto.email,
+      password: await hash(dto.password, salt),
+      name: dto.email,
+      avatarPath: '/uploads/avatars/batman.jpg'
+    });
 
-		if (!user) throw new NotFoundException('User not found!');
-		const isValidPassword = await compare(dto.password, user.password);
+    const user = await this.userRepository.save(newUser);
+    const tokens = await this.issueTokenPair(newUser.id);
 
-		if (!isValidPassword) throw new UnauthorizedException('Invalid passport!');
+    return {
+      user: this.returnUserFields(user),
+      ...tokens
+    };
+  }
 
-		return user;
-	}
+  async validateUser(dto: AuthDto): Promise<UserEntity> {
+    const user = await this.userRepository.findOne({
+      where: {
+        email: dto.email
+      },
+      select: ['id', 'email', 'password', 'avatarPath', 'name']
+    });
 
-	returnUserFields(user: UserEntity) {
-		return {
-			id: user.id,
-			email: user.email,
-			avatarPath: user.avatarPath,
-			name: user.name
-		};
-	}
+    if (!user) throw new NotFoundException('User not found!');
+    const isValidPassword = await compare(dto.password, user.password);
+
+    if (!isValidPassword) throw new UnauthorizedException('Invalid passport!');
+
+    return user;
+  }
+
+  async issueTokenPair(userId: number) {
+    const data = { id: userId };
+    const refreshToken = await this.jwtService.signAsync(data, {
+      expiresIn: '15d'
+    });
+    const accessToken = await this.jwtService.signAsync(data, {
+      expiresIn: '1d'
+    });
+
+    return { refreshToken, accessToken };
+  }
+
+  returnUserFields(user: UserEntity) {
+    return {
+      id: user.id,
+      email: user.email,
+      avatarPath: user.avatarPath,
+      name: user.name,
+      isAdmin: user.isAdmin
+    };
+  }
 }
